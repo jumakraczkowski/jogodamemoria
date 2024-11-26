@@ -2,14 +2,15 @@ let cartas = [];
 let imagensCartas = [];
 let cartasViradas = [];
 let cartasEncontradas = [];
-let tempoRestante = 30; // Tempo total para o jogo
+let imagemFundo;
+let imagemCapa;
+let larguraCarta = 150;
+let alturaCarta = 150;
+let tempoRestante = 30; // Tempo inicial em segundos
 let cronometroAtivo = true;
-let tempoAcabou = false;
-const larguraCarta = 100;
-const alturaCarta = 150;
-let imagemFundo; // Variável para a imagem de fundo
-let imagensUsadas = []; // Imagens usadas na rodada atual
+let jogoIniciado = false;
 
+// Fixa a parte do preload
 function preload() {
   // Carregar as imagens das cartas
   imagensCartas.push(loadImage('bolo.jpg'));
@@ -17,68 +18,108 @@ function preload() {
   imagensCartas.push(loadImage('menino.jpg'));
   imagensCartas.push(loadImage('menina.jpg'));
   imagensCartas.push(loadImage('sorvete.jpg'));
-  imagensCartas.push(loadImage('pato-1.jpeg')); // Mais imagens
+  imagensCartas.push(loadImage('pato-1.jpeg'));
   imagensCartas.push(loadImage('pizza.jpeg'));
   imagensCartas.push(loadImage('cavalo.jpg'));
   imagensCartas.push(loadImage('flor.jpg'));
 
-  // Carregar a imagem de fundo
-  imagemFundo = loadImage('praiaaa.jpg'); // Substitua 'fundo.jpg' pelo caminho correto da sua imagem
+  // Carregar a imagem de fundo e a capa
+  imagemFundo = loadImage('praiaaa.jpg');
+  imagemCapa = loadImage('capaaa.jpg'); // Sua imagem de capa
 }
 
 function setup() {
   createCanvas(800, 600);
-  inicializarCartas();
-  textSize(32);
+  setInterval(() => {
+    if (cronometroAtivo && tempoRestante > 0) {
+      tempoRestante--;
+    } else if (tempoRestante === 0 && cronometroAtivo) {
+      // Reinicia o cronômetro e reseta o jogo na mesma rodada
+      reiniciarRodada();
+    }
+  }, 1000);
 }
 
 function draw() {
-  // Desenha a imagem de fundo
+  if (!jogoIniciado) {
+    // Exibe a capa
+    background(imagemCapa);
+    textSize(48);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    text("Jogo da Memória", width / 2, height / 3);
+    
+    // Botão "Começar"
+    fill(0, 255, 0);
+    rect(width / 2 - 100, height / 2 + 100, 200, 50);
+    fill(0);
+    textSize(32);
+    text("Começar", width / 2, height / 2 + 125);
+    
+    return;
+  }
+
+  // Desenhar o fundo
   background(imagemFundo);
 
-  // Exibe as cartas
+  // Mostrar o cronômetro
+  textSize(32);
+  fill(255);
+  text(`Tempo: ${tempoRestante}`, width - 150, 40);
+
+  // Desenhar as cartas
   for (let i = 0; i < cartas.length; i++) {
-    let x = (i % 5) * (larguraCarta + 20) + 50;
-    let y = Math.floor(i / 5) * (alturaCarta + 20) + 50;
+    let x = (i % 4) * (larguraCarta + 10) + 50;
+    let y = floor(i / 4) * (alturaCarta + 10) + 100;
+
     if (cartasViradas.includes(i) || cartasEncontradas.includes(i)) {
-      image(imagensUsadas[cartas[i]], x, y, larguraCarta, alturaCarta);
+      image(imagensCartas[cartas[i]], x, y, larguraCarta, alturaCarta);
     } else {
-      fill(255);
-      rect(x, y, larguraCarta, alturaCarta);
+      fill(200);
+      rect(x, y, larguraCarta, alturaCarta, 10);
     }
   }
 
-  // Exibe o tempo restante
-  fill(0);
-  text("Tempo: " + tempoRestante, width - 150, 30);
-
-  // Verifica se o jogador venceu
+  // Verificar se o jogador venceu
   if (cartasEncontradas.length === cartas.length) {
-    fill(0, 200, 0);
-    textSize(48);
-    textAlign(CENTER, CENTER);
-    text("Você venceu!", width / 2, height / 2);
-    noLoop(); // Para o jogo
+    cronometroAtivo = false;
+    textSize(50);
+    fill(0, 255, 0);
+    text('Você venceu!', width / 2 - 150, height / 2);
+    setTimeout(() => {
+      inicializarCartas();
+      tempoRestante = 30;
+      cronometroAtivo = true;
+    }, 3000); // Reinicia o jogo após 3 segundos
   }
 
-  // Controla o cronômetro
-  if (cronometroAtivo && !tempoAcabou) {
-    if (frameCount % 60 === 0 && tempoRestante > 0) {
-      tempoRestante--;
-    } else if (tempoRestante === 0) {
-      tempoAcabou = true;
-      textSize(48);
-      textAlign(CENTER, CENTER);
-      text("Tempo Esgotado!", width / 2, height / 2);
-      noLoop();
-    }
+  // Verificar se o tempo acabou
+  if (tempoRestante <= 0) {
+    textSize(50);
+    fill(255, 0, 0);
+    text('Tempo esgotado!', width / 2 - 200, height / 2);
   }
 }
 
 function mousePressed() {
+  if (!jogoIniciado) {
+    // Inicia o jogo ao clicar no botão
+    if (
+      mouseX > width / 2 - 100 &&
+      mouseX < width / 2 + 100 &&
+      mouseY > height / 2 + 100 &&
+      mouseY < height / 2 + 150
+    ) {
+      jogoIniciado = true;
+      inicializarCartas();
+    }
+    return;
+  }
+
   for (let i = 0; i < cartas.length; i++) {
-    let x = (i % 5) * (larguraCarta + 20) + 50;
-    let y = Math.floor(i / 5) * (alturaCarta + 20) + 50;
+    let x = (i % 4) * (larguraCarta + 10) + 50;
+    let y = floor(i / 4) * (alturaCarta + 10) + 100;
+
     if (
       mouseX > x &&
       mouseX < x + larguraCarta &&
@@ -86,22 +127,19 @@ function mousePressed() {
       mouseY < y + alturaCarta
     ) {
       if (!cartasViradas.includes(i) && !cartasEncontradas.includes(i)) {
-        cartasViradas.push(i); // Vira a carta
+        cartasViradas.push(i);
 
-        // Verifica se duas cartas foram viradas
         if (cartasViradas.length === 2) {
           let carta1 = cartas[cartasViradas[0]];
           let carta2 = cartas[cartasViradas[1]];
 
           if (carta1 === carta2) {
-            cartasEncontradas.push(...cartasViradas); // Marca como encontrada
-            cartasViradas = []; // Reseta as viradas
-          } else {
-            // Mantém as cartas viradas até acertar
-            setTimeout(() => {
-              cartasViradas = [];
-            }, 1000);
+            cartasEncontradas.push(...cartasViradas);
           }
+
+          setTimeout(() => {
+            cartasViradas = [];
+          }, 1000);
         }
       }
     }
@@ -113,18 +151,22 @@ function inicializarCartas() {
   cartasViradas = [];
   cartasEncontradas = [];
 
-  let numPares = 5; // Número fixo de pares
-  let totalImagens = imagensCartas.length;
+  // Define o número de pares de cartas (6 pares fixos neste exemplo)
+  let numPares = 6;
+  let paresMaximos = Math.min(numPares, imagensCartas.length);
 
-  // Embaralha todas as imagens disponíveis e escolhe as usadas na rodada
-  imagensUsadas = shuffle(imagensCartas).slice(0, numPares);
-
-  // Cria os pares de cartas
-  for (let i = 0; i < imagensUsadas.length; i++) {
+  for (let i = 0; i < paresMaximos; i++) {
     cartas.push(i);
     cartas.push(i);
   }
 
-  // Embaralha as cartas
   cartas = shuffle(cartas);
+}
+
+function reiniciarRodada() {
+  // Reseta as variáveis para o estado inicial da rodada
+  cartasViradas = [];
+  cartasEncontradas = [];
+  tempoRestante = 30;
+  cronometroAtivo = true;
 }
